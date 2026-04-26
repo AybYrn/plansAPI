@@ -84,6 +84,34 @@ func deletePlanByID(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Plan not found", http.StatusNotFound)
 }
 
+func putPlanByID(w http.ResponseWriter, r *http.Request) {
+	id, err := getIDFromPath(r.URL.Path)
+	if err != nil {
+		http.Error(w, "Invalid plan ID", http.StatusBadRequest)
+		return
+	}
+
+	var updatedPlan Plan
+	err = json.NewDecoder(r.Body).Decode(&updatedPlan)
+	if err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	for i, plan := range plans {
+		if plan.ID == id {
+			updatedPlan.ID = id
+			plans[i] = updatedPlan
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(updatedPlan)
+			return
+		}
+	}
+
+	http.Error(w, "Plan not found", http.StatusNotFound)
+}
+
 func plansHandler(w http.ResponseWriter, r *http.Request) { // This function handles incoming HTTP requests to the /plans endpoint. It checks the HTTP method of the request and calls the appropriate handler function (getPlans for GET requests and createPlan for POST requests). If the method is not allowed, it returns a 405 Method Not Allowed error.
 	if r.Method == http.MethodGet {
 		getPlans(w, r)
@@ -106,6 +134,11 @@ func planByIDHandler(w http.ResponseWriter, r *http.Request) { // This function 
 
 	if r.Method == http.MethodDelete {
 		deletePlanByID(w, r)
+		return
+	}
+
+	if r.Method == http.MethodPut {
+		putPlanByID(w, r)
 		return
 	}
 
